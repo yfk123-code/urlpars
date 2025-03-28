@@ -1,6 +1,9 @@
 async function parseM3U8(url) {
     try {
-        const response = await fetch(url);
+        const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+        const fullUrl = proxyUrl + url;
+        
+        const response = await fetch(fullUrl);
         const text = await response.text();
         const lines = text.split('\n');
         const channels = [];
@@ -27,31 +30,3 @@ async function parseM3U8(url) {
         return [];
     }
 }
-
-document.getElementById('parseBtn').addEventListener('click', async () => {
-    const url = document.getElementById('playlistUrl').value;
-    if (!url) {
-        alert('Please enter a valid M3U8 URL.');
-        return;
-    }
-
-    const channels = await parseM3U8(url);
-
-    const channelsDiv = document.getElementById('channels');
-    channelsDiv.innerHTML = '';
-
-    if (channels.length === 0) {
-        channelsDiv.innerHTML = '<p>No channels found or failed to parse.</p>';
-        return;
-    }
-
-    channels.forEach(channel => {
-        const channelDiv = document.createElement('div');
-        channelDiv.innerHTML = `
-            <strong>${channel.name}</strong><br>
-            <a href="${channel.url}" target="_blank">${channel.url}</a>
-            <hr>
-        `;
-        channelsDiv.appendChild(channelDiv);
-    });
-});
