@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M3U8 Playlist Parser</title>
+    <title>M3U8 Playlist Parser with Player</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>M3U8 Playlist Parser</h1>
+        <h1>M3U8 Playlist Parser with Player</h1>
         <input type="text" id="playlistUrl" placeholder="Enter M3U8 URL">
         <button id="parseBtn">Parse Playlist</button>
         <div id="channels"></div>
     </div>
+
+    <div id="playerContainer" class="player-container" style="display: none;">
+        <video id="videoPlayer" controls></video>
+        <button id="closePlayer">Close Player</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="script.js"></script>
 </body>
 </html>
