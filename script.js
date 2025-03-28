@@ -1,71 +1,86 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    margin: 0;
-    padding: 0;
+async function parseM3U8(url) {
+    try {
+        const response = await fetch(url);
+        const text = await response.text();
+        const lines = text.split('\n');
+        const channels = [];
+        let currentChannel = {};
+
+        lines.forEach(line => {
+            if (line.startsWith('#EXTINF')) {
+                const nameMatch = line.match(/tvg-name="(.*?)"/);
+                const titleMatch = line.match(/, (.*)/);
+                currentChannel = {
+                    name: nameMatch ? nameMatch[1] : titleMatch ? titleMatch[1] : "Unknown",
+                    url: ''
+                };
+            } else if (line.startsWith('http')) {
+                currentChannel.url = line.trim();
+                channels.push(currentChannel);
+                currentChannel = {};
+            }
+        });
+
+        return channels;
+    } catch (error) {
+        console.error('Error fetching or parsing playlist:', error);
+        return [];
+    }
 }
 
-.container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+document.getElementById('parseBtn').addEventListener('click', async () => {
+    const url = document.getElementById('playlistUrl').value;
+    if (!url) {
+        alert('Please enter a valid M3U8 URL.');
+        return;
+    }
+
+    const channels = await parseM3U8(url);
+
+    const channelsDiv = document.getElementById('channels');
+    channelsDiv.innerHTML = '';
+
+    if (channels.length === 0) {
+        channelsDiv.innerHTML = '<p>No channels found or failed to parse.</p>';
+        return;
+    }
+
+    channels.forEach(channel => {
+        const channelDiv = document.createElement('div');
+        channelDiv.innerHTML = `
+            <strong>${channel.name}</strong><br>
+            <button class="playBtn" data-url="${channel.url}">Play</button>
+            <hr>
+        `;
+        channelsDiv.appendChild(channelDiv);
+    });
+
+    document.querySelectorAll('.playBtn').forEach(button => {
+        button.addEventListener('click', (e) => playStream(e.target.getAttribute('data-url')));
+    });
+});
+
+function playStream(url) {
+    const video = document.getElementById('videoPlayer');
+    const playerContainer = document.getElementById('playerContainer');
+
+    if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+    }
+
+    playerContainer.style.display = 'flex';
+    video.play();
 }
 
-h1 {
-    text-align: center;
-}
+document.getElementById('closePlayer').addEventListener('click', () => {
+    const playerContainer = document.getElementById('playerContainer');
+    const video = document.getElementById('videoPlayer');
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-
-button {
-    padding: 10px;
-    width: 100%;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin-bottom: 10px;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-#channels {
-    margin-top: 20px;
-}
-
-.player-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-video {
-    width: 80%;
-    max-width: 800px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-}
-
-#closePlayer {
-    padding: 10px;
-    background-color: red;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
+    playerContainer.style.display = 'none';
+    video.pause();
+    video.src = "";
+});
